@@ -29,7 +29,6 @@ get embla => [
 ## Usage without Embla
 ```dart
 import 'dart:convert' show UTF8;
-import 'package:shelf/shelf.dart' as shelf;
 
 import 'package:embla_templates/embla_templates.dart';
 import 'package:embla_templates/engines/html_view_engine.dart';
@@ -42,7 +41,7 @@ main() {
     ]
   );
 
-  // Turn index.html into a Shelf Response
-  shelf.Response response = view.render('index');
+  // Turn index.html into a Template -- a Future Shelf Response
+  Template response = view.render('index');
 }
 ```
