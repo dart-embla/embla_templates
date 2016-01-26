@@ -37,7 +37,7 @@ main() {
   final view = new ViewComposer.create(
     templatesDirectory: 'web',
     engines: [
-      new HtmlViewEngine(UTF8)
+      new HtmlViewEngine()
     ]
   );
 

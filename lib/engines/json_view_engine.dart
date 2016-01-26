@@ -1,19 +1,17 @@
 import '../src/view_engine.dart';
 import 'dart:async';
 import 'dart:io';
-import 'dart:convert';
 
 class JsonViewEngine extends ViewEngine {
-  JsonViewEngine(Encoding encoding) : super([
-    '.json'
-  ], encoding);
+  JsonViewEngine() : super(['.json']);
 
-  Template render(Stream<String> lines, {int statusCode: 200}) {
-    return new Template(
-        statusCode,
-        lines,
-        ContentType.JSON,
-        encoding: encoding
-    );
+  render(
+      Stream<String> lines,
+      Template template,
+      void writeLine(String line),
+      void setContentType(ContentType contentType)
+  ) {
+    setContentType(ContentType.JSON);
+    lines.listen(writeLine);
   }
 }

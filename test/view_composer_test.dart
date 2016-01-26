@@ -2,7 +2,6 @@ import 'package:quark/unit.dart';
 import 'package:embla_templates/embla_templates.dart';
 import 'dart:async';
 import 'package:embla_templates/engines/txt_view_engine.dart';
-import 'dart:convert';
 export 'package:quark/init.dart';
 
 class TestTemplateLoader implements TemplateLoader {
@@ -26,8 +25,8 @@ class ViewComposerTest extends UnitTest {
   ViewComposer get composer => new ViewComposer(
       new TestTemplateLoader(),
       [
-        new TxtViewEngine(UTF8),
-        new TestViewEngine(UTF8),
+        new TxtViewEngine(),
+        new TestViewEngine(),
       ]
   );
 
@@ -55,6 +54,4 @@ class ViewComposerTest extends UnitTest {
 
 class TestViewEngine extends TxtViewEngine {
   final Iterable<String> extensions = ['.x'];
-
-  TestViewEngine(Encoding encoding) : super(encoding);
 }

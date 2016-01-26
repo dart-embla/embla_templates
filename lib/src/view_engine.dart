@@ -2,35 +2,53 @@ import 'dart:async';
 import 'package:shelf/shelf.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'dart:mirrors';
 
 abstract class ViewEngine {
-  final Encoding encoding;
   final Iterable<String> extensions;
 
-  ViewEngine(this.extensions, this.encoding);
+  ViewEngine(this.extensions);
 
-  Template render(Stream<String> lines, {int statusCode: 200});
+  render(
+      Stream<String> lines,
+      Template template,
+      void writeLine(String line),
+      void setContentType(ContentType contentType)
+  );
 }
 
+@proxy
 class Template implements Future<Response> {
-  final int statusCode;
-  final Stream<String> lines;
-  final ContentType contentType;
-  final Encoding encoding;
+  final int _statusCode;
+  final Stream<String> _lines;
+  final Future<ContentType> _contentType;
+  final Map<String, dynamic> locals = <String, dynamic>{};
 
-  Template(this.statusCode, this.lines,
-      this.contentType, {this.encoding: UTF8});
+  Template(this._statusCode, this._lines, this._contentType);
 
-  Future<Response> _cache;
-  Future<Response> get _future => _cache ??= _makeFuture();
-  Future<Response> _makeFuture() async {
+  Future<Response> get _future async {
+    final controller = new StreamController<List<int>>();
+    _lines.map(UTF8.encode).listen(controller.add, onDone: () {
+      controller.close();
+    });
     return new Response(
-      statusCode,
-      body: lines.map(encoding.encode),
-      encoding: encoding,
+      _statusCode,
+      body: controller.stream,
+      encoding: UTF8,
       headers: {
-        'Content-Type': contentType.toString()
+        'Content-Type': (await _contentType).toString()
       });
+  }
+
+  noSuchMethod(Invocation invocation) {
+    if (invocation.isSetter) {
+      final key = MirrorSystem
+          .getName(invocation.memberName)
+          .replaceFirst('=', '');
+
+      return locals[key] = invocation.positionalArguments[0];
+    }
+    return super.noSuchMethod(invocation);
   }
 
   @override

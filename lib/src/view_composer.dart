@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
+import 'package:embla/http.dart';
 
 abstract class TemplateLoader {
   Stream<String> load(String filename);
@@ -44,20 +45,47 @@ class ViewComposer {
 
   factory ViewComposer.create({
   List<ViewEngine> engines: const [],
-  String templatesDirectory: 'web', Encoding encoding: UTF8
+  String templatesDirectory: 'web',
+  Encoding encoding: UTF8
   }) {
     return new ViewComposer(new IoTemplateLoader(templatesDirectory, encoding), engines);
   }
 
-  Template render(String template) async {
-    for (final engine in engines) {
-      for (final extension in engine.extensions) {
-        final path = template + extension;
-        if (await _loader.exists(path)) {
-          return engine.render(_loader.load(path));
+  Template render(String path, {int statusCode: 200, Request request}) {
+    final linesController = new StreamController<String>();
+    final contentTypeCompleter = new Completer<ContentType>();
+
+    final template = new Template(
+        statusCode,
+        linesController.stream,
+        contentTypeCompleter.future
+    );
+
+    if (request != null && request.context.containsKey('embla:locals')) {
+      template.locals.addAll(request.context['embla:locals']);
+    }
+
+    linesController.onListen = () async {
+      for (final engine in engines) {
+        for (final extension in engine.extensions) {
+          final pathWithExt = path + extension;
+          if (await _loader.exists(pathWithExt)) {
+            await engine.render(
+                _loader.load(pathWithExt),
+                template,
+                linesController.add,
+                contentTypeCompleter.complete
+            );
+            if (!contentTypeCompleter.isCompleted)
+              contentTypeCompleter.complete(ContentType.HTML);
+            await linesController.close();
+            return;
+          }
         }
       }
-    }
-    throw new TemplateNotFoundException(template);
+      throw new TemplateNotFoundException(path);
+    };
+
+    return template;
   }
 }
