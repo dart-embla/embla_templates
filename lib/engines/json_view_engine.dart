@@ -5,13 +5,13 @@ import 'dart:io';
 class JsonViewEngine extends ViewEngine {
   JsonViewEngine() : super(['.json']);
 
-  render(
+  Future render(
       Stream<String> lines,
       Template template,
       void writeLine(String line),
       void setContentType(ContentType contentType)
-  ) {
+      ) async {
     setContentType(ContentType.JSON);
-    lines.listen(writeLine);
+    await lines.listen(writeLine).asFuture();
   }
 }

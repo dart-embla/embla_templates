@@ -5,13 +5,13 @@ import 'dart:io';
 class HtmlViewEngine extends ViewEngine {
   HtmlViewEngine() : super(['.htm', '.html', '.html5', '.xhtml']);
 
-  render(
+  Future render(
       Stream<String> lines,
       Template template,
       void writeLine(String line),
       void setContentType(ContentType contentType)
-  ) {
-    setContentType(ContentType.TEXT);
-    lines.listen(writeLine);
+      ) async {
+    setContentType(ContentType.HTML);
+    await lines.listen(writeLine).asFuture();
   }
 }

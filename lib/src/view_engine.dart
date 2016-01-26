@@ -9,7 +9,7 @@ abstract class ViewEngine {
 
   ViewEngine(this.extensions);
 
-  render(
+  Future render(
       Stream<String> lines,
       Template template,
       void writeLine(String line),
