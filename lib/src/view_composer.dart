@@ -4,22 +4,46 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:embla/http.dart';
+import 'package:async/async.dart' show StreamSplitter;
 
 abstract class TemplateLoader {
   Stream<String> load(String filename);
   Future<bool> exists(String filename);
 }
 
+class _TemplateCache {
+  Map<String, StreamSplitter<List<int>>> _streams = <String, StreamSplitter<List<int>>>{};
+  Map<String, DateTime> _dates = <String, DateTime>{};
+
+  Stream<List<int>> putIfAbsent(File file) async* {
+    final id = file.absolute.path;
+    if (await _isntCached(id, file)) {
+      await _streams[id]?.close();
+      final splitter = new StreamSplitter(file.openRead());
+      _streams[id] = splitter;
+    }
+    _dates[id] = await file.lastModified();
+    yield* _streams[id].split();
+  }
+
+  Future<bool> _isntCached(String id, File file) async =>
+      !_streams.containsKey(id) ||
+          (await file.lastModified()).isAfter(_dates[id]);
+}
+
 class IoTemplateLoader extends TemplateLoader {
   final String templateDirectory;
   final Encoding encoding;
+  final _TemplateCache _cache = new _TemplateCache();
 
   IoTemplateLoader(this.templateDirectory, this.encoding);
 
   File file(String filename) => new File(path.join(templateDirectory, filename));
 
   Stream<String> load(String filename) {
-    return file(filename).openRead().map(encoding.decode);
+    return _cache
+        .putIfAbsent(file(filename))
+        .map(encoding.decode);
   }
 
   Future<bool> exists(String filename) {
@@ -56,6 +80,7 @@ class ViewComposer {
     final contentTypeCompleter = new Completer<ContentType>();
 
     final template = new Template(
+        path,
         statusCode,
         linesController.stream,
         contentTypeCompleter.future

@@ -6,7 +6,7 @@ import 'package:mustache/mustache.dart' as mustache;
 class HandlebarsViewEngine extends ViewEngine {
   HandlebarsViewEngine() : super(['.hbs', '.handlebars', '.mustache']);
 
-  render(
+  Future render(
       Stream<String> lines,
       Template template,
       void writeLine(String line),

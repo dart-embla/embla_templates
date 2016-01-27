@@ -19,12 +19,13 @@ abstract class ViewEngine {
 
 @proxy
 class Template implements Future<Response> {
+  final String name;
   final int _statusCode;
   final Stream<String> _lines;
   final Future<ContentType> _contentType;
   final Map<String, dynamic> locals = <String, dynamic>{};
 
-  Template(this._statusCode, this._lines, this._contentType);
+  Template(this.name, this._statusCode, this._lines, this._contentType);
 
   Future<Response> get _future async {
     final controller = new StreamController<List<int>>();
