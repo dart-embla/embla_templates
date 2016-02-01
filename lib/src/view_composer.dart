@@ -5,14 +5,19 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 import 'package:embla/http.dart';
 import 'package:async/async.dart' show StreamSplitter;
+import 'package:stack_trace/stack_trace.dart';
+import 'package:embla/src/util/trace_formatting.dart';
+import 'package:embla/src/util/stylizer.dart';
 
 abstract class TemplateLoader {
   Stream<String> load(String filename);
+
   Future<bool> exists(String filename);
 }
 
 class _TemplateCache {
-  Map<String, StreamSplitter<List<int>>> _streams = <String, StreamSplitter<List<int>>>{};
+  Map<String, StreamSplitter<List<int>>> _streams =
+  <String, StreamSplitter<List<int>>>{};
   Map<String, DateTime> _dates = <String, DateTime>{};
 
   Stream<List<int>> putIfAbsent(File file) async* {
@@ -38,7 +43,8 @@ class IoTemplateLoader extends TemplateLoader {
 
   IoTemplateLoader(this.templateDirectory, this.encoding);
 
-  File file(String filename) => new File(path.join(templateDirectory, filename));
+  File file(String filename) =>
+      new File(path.join(templateDirectory, filename));
 
   Stream<String> load(String filename) {
     return _cache
@@ -72,12 +78,19 @@ class ViewComposer {
   String templatesDirectory: 'web',
   Encoding encoding: UTF8
   }) {
-    return new ViewComposer(new IoTemplateLoader(templatesDirectory, encoding), engines);
+    return new ViewComposer(
+        new IoTemplateLoader(templatesDirectory, encoding), engines);
   }
 
   Template render(String path, {int statusCode: 200, Request request}) {
     final linesController = new StreamController<String>();
     final contentTypeCompleter = new Completer<ContentType>();
+
+    close() async {
+      if (!contentTypeCompleter.isCompleted)
+        contentTypeCompleter.complete(ContentType.HTML);
+      await linesController.close();
+    }
 
     final template = new Template(
         path,
@@ -95,15 +108,17 @@ class ViewComposer {
         for (final extension in engine.extensions) {
           final pathWithExt = path + extension;
           if (await _loader.exists(pathWithExt)) {
-            await engine.render(
-                _loader.load(pathWithExt),
-                template,
-                linesController.add,
-                contentTypeCompleter.complete
-            );
-            if (!contentTypeCompleter.isCompleted)
-              contentTypeCompleter.complete(ContentType.HTML);
-            await linesController.close();
+            try {
+              await engine.render(
+                  _loader.load(pathWithExt),
+                  template,
+                  linesController.add,
+                  contentTypeCompleter.complete
+              );
+            } catch (e, s) {
+              await _renderError(contentTypeCompleter, linesController, e, s);
+            }
+            await close();
             return;
           }
         }
@@ -112,5 +127,24 @@ class ViewComposer {
     };
 
     return template;
+  }
+
+  Future _renderError(Completer<ContentType> contentTypeCompleter, StreamController<String> linesController, e, StackTrace s) async {
+    final contentType = contentTypeCompleter.isCompleted
+        ? await contentTypeCompleter.future
+        : ContentType.HTML;
+
+    if (contentType == ContentType.HTML) {
+      linesController.add('<pre>');
+    }
+    linesController.add('${e}');
+    linesController.add('${new Stylizer().strip(
+        new TraceFormatter(new Chain.forTrace(s)).formatted
+            .split('\n')
+            .reversed
+            .join('\n'))}');
+    if (contentType == ContentType.HTML) {
+      linesController.add('</pre>');
+    }
   }
 }

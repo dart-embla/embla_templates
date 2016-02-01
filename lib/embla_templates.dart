@@ -8,6 +8,7 @@ import 'src/view_engine.dart';
 
 export 'src/view_composer.dart';
 export 'src/view_engine.dart';
+export 'src/view.dart';
 
 class TemplatingBootstrapper extends Bootstrapper {
   final List engines;
