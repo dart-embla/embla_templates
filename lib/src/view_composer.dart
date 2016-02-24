@@ -138,11 +138,15 @@ class ViewComposer {
       linesController.add('<pre>');
     }
     linesController.add('${e}');
-    linesController.add('${new Stylizer().strip(
-        new TraceFormatter(new Chain.forTrace(s)).formatted
+    linesController.add(
+      new Stylizer().strip(
+        new TraceFormatter(new Chain.forTrace(s))
+            .formatted
             .split('\n')
             .reversed
-            .join('\n'))}');
+            .join('\n')
+        )
+    );
     if (contentType == ContentType.HTML) {
       linesController.add('</pre>');
     }

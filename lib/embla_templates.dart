@@ -53,4 +53,3 @@ class TemplatingBootstrapper extends Bootstrapper {
     }
   }
 }
-
