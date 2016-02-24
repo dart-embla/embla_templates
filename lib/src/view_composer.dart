@@ -123,7 +123,8 @@ class ViewComposer {
           }
         }
       }
-      throw new TemplateNotFoundException(path);
+      linesController.addError(new TemplateNotFoundException(path));
+      await close();
     };
 
     return template;
@@ -137,7 +138,7 @@ class ViewComposer {
     if (contentType == ContentType.HTML) {
       linesController.add('<pre>');
     }
-    linesController.add('${e}');
+    linesController.add('${e}\n\n');
     linesController.add(
       new Stylizer().strip(
         new TraceFormatter(new Chain.forTrace(s))

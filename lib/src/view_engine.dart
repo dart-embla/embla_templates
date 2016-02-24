@@ -27,18 +27,32 @@ class Template implements Future<Response> {
 
   Template(this.name, this._statusCode, this._lines, this._contentType);
 
-  Future<Response> get _future async {
+  Future<Response> get _future {
+    final completer = new Completer<Response>();
     final controller = new StreamController<List<int>>();
     _lines.map(UTF8.encode).listen(controller.add, onDone: () {
       controller.close();
+    }, onError: (e, s) {
+      if (!completer.isCompleted) {
+        completer.completeError(e, s);
+        return;
+      }
+      print('Uncaught error in response stream: $e');
     });
-    return new Response(
-      _statusCode,
-      body: controller.stream,
-      encoding: UTF8,
-      headers: {
-        'Content-Type': (await _contentType).toString()
-      });
+    _contentType.then((contentType) {
+      if (completer.isCompleted) {
+        return;
+      }
+      completer.complete(new Response(
+        _statusCode,
+        body: controller.stream,
+        encoding: UTF8,
+        headers: {
+          'Content-Type': contentType.toString()
+        })
+      );
+    });
+    return completer.future;
   }
 
   noSuchMethod(Invocation invocation) {
