@@ -7,33 +7,38 @@ import 'package:embla/http.dart';
 
 import 'package:embla_templates/embla_templates.dart';
 import 'package:embla_templates/engines/html_view_engine.dart';
+import 'package:embla_templates/engines/handlebars_view_engine.dart';
 
 get embla => [
-  new HttpBootstrapper(
-    pipeline: pipe(
-      (ViewComposer view) { // Will be responding to each request
-
-        return view.render('index');
-      }
-    )
-  ),
   new TemplatingBootstrapper(
     templatesDirectory: 'web',
     engines: [
-      HtmlViewEngine
+      HandlebarsViewEngine,
+      HtmlViewEngine,
     ]
+  ),
+  new HttpBootstrapper(
+    pipeline: pipe(
+      (View view) { // Will be responding to each request
+
+        // Given the configuration in the TemplatingBootstrapper,
+        // `render` will look for `web/index.hbs` or `web/index.html`
+        return view.render('index')
+          ..localVariableThatWillBeAvailableInTheTemplate = "value";
+      }
+    )
   )
 ];
 ```
 
 ## Usage without Embla
 ```dart
-import 'dart:convert' show UTF8;
-
 import 'package:embla_templates/embla_templates.dart';
 import 'package:embla_templates/engines/html_view_engine.dart';
 
-main() {
+import 'package:shelf/shelf.dart' as shelf;
+
+main() async {
   final view = new ViewComposer.create(
     templatesDirectory: 'web',
     engines: [
@@ -42,6 +47,10 @@ main() {
   );
 
   // Turn index.html into a Template -- a Future Shelf Response
-  Template response = view.render('index');
+  Template template = view.render('index')
+    ..localVariableThatWillBeAvailableInTheTemplate = "value";
+
+  // Future<shelf.Response> is a valid return value in a shelf.Handler
+  shelf.Response response = await template;
 }
 ```
