@@ -8,7 +8,6 @@ import 'src/view_engine.dart';
 
 export 'src/view_composer.dart';
 export 'src/view_engine.dart';
-export 'src/view.dart';
 
 class TemplatingBootstrapper extends Bootstrapper {
   final List engines;
@@ -26,18 +25,17 @@ class TemplatingBootstrapper extends Bootstrapper {
 
   @Hook.bindings
   bindings() {
+    var container = this.container;
     engines.forEach(_verifyIsViewEngine);
 
     final composer = new ViewComposer(
         _templateLoader,
         new List.unmodifiable(
-            engines.map((t) => container.make(t,
-                injecting: {Encoding: encoding}
-            ))
+            engines.map((t) => container.bind(Encoding, to: encoding).make(t))
         )
     );
 
-    container.singleton(composer, as: ViewComposer);
+    return container.bind(ViewComposer, to: composer);
   }
 
   void _verifyIsViewEngine(engine) {

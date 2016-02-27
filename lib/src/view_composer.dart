@@ -82,7 +82,7 @@ class ViewComposer {
         new IoTemplateLoader(templatesDirectory, encoding), engines);
   }
 
-  Template render(String path, {int statusCode: 200, Request request}) {
+  Template render(String path, {int statusCode: 200}) {
     final linesController = new StreamController<String>();
     final contentTypeCompleter = new Completer<ContentType>();
 
@@ -99,8 +99,8 @@ class ViewComposer {
         contentTypeCompleter.future
     );
 
-    if (request != null && request.context.containsKey('embla:locals')) {
-      template.locals.addAll(request.context['embla:locals']);
+    if (isInHttpContext) {
+      template.locals.addAll(context.locals);
     }
 
     linesController.onListen = () async {
