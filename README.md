@@ -19,7 +19,7 @@ get embla => [
   ),
   new HttpBootstrapper(
     pipeline: pipe(
-      (View view) { // Will be responding to each request
+      (ViewComposer view) { // Will be responding to each request
 
         // Given the configuration in the TemplatingBootstrapper,
         // `render` will look for `web/index.hbs` or `web/index.html`
