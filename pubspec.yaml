@@ -16,7 +16,3 @@ dependencies:
 dev_dependencies:
   test: any
   quark: any
-
-dependency_overrides:
-  embla:
-    path: ../embla
