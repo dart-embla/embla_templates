@@ -1,6 +1,6 @@
 name: embla_templates
 description: Templating platform for Embla
-version: 0.1.3
+version: 0.1.4
 author: Emil Persson <emil.n.persson@gmail.com>
 homepage: https://github.com/dart-embla/embla_templates
 
@@ -8,7 +8,7 @@ environment:
   sdk: ">=1.12.0 <2.0.0"
 
 dependencies:
-  embla: ^0.1.12
+  embla: ">=0.1.12 <0.3.0"
   path: ^1.3.9
   mustache: ^0.2.5
   async: ^1.8.0
